@@ -2,6 +2,7 @@ package htpasswd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/go-cty/cty"
 
@@ -46,6 +47,7 @@ func dataSourcePasswordRead(ctx context.Context, d *schema.ResourceData, m inter
 		}
 		d.Set("apr1", apr1Hash)
 	}
+	d.SetId(fmt.Sprintf("PW%x", password))
 	return diags
 }
 
