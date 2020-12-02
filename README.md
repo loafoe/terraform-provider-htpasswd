@@ -7,7 +7,6 @@
 ## Overview
 
 This is a terraform provider to generate output related to Apache htpasswd file
-To find out more about HSDP please visit https://www.hsdp.io/
 
 # Using the provider
 
