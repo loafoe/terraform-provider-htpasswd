@@ -32,7 +32,7 @@ func dataSourcePasswordRead(ctx context.Context, d *schema.ResourceData, m inter
 	password := d.Get("password").(string)
 
 	if d.IsNewResource() || d.HasChange("password") {
-		apr1Hash, err := apr1.Hash(password, "")
+		apr1Hash, err := apr1.Hash(password, "12345678")
 		if err != nil {
 			return diag.FromErr(err)
 		}
