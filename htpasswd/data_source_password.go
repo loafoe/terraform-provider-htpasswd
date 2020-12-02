@@ -31,13 +31,13 @@ func dataSourcePasswordRead(ctx context.Context, d *schema.ResourceData, m inter
 
 	password := d.Get("password").(string)
 
-	apr1Hash, err := apr1.Hash(password, "")
-	if err != nil {
-		return diag.FromErr(err)
+	if d.IsNewResource() || d.HasChange("password") {
+		apr1Hash, err := apr1.Hash(password, "")
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		d.Set("apr1", apr1Hash)
 	}
-
-	d.Set("apr1", apr1Hash)
-
 	d.SetId(fmt.Sprintf("PW%x", password))
 
 	return diags
