@@ -2,7 +2,8 @@ package htpasswd
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/hashicorp/go-cty/cty"
 
 	"github.com/johnaoss/htpasswd/apr1"
 
@@ -18,6 +19,12 @@ func dataSourcePassword() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"salt": &schema.Schema{
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: validateSalt,
+				Default:          "",
+			},
 			"apr1": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
@@ -32,13 +39,24 @@ func dataSourcePasswordRead(ctx context.Context, d *schema.ResourceData, m inter
 	password := d.Get("password").(string)
 
 	if d.IsNewResource() || d.HasChange("password") {
-		apr1Hash, err := apr1.Hash(password, "12345678")
+		salt := d.Get("salt").(string)
+		apr1Hash, err := apr1.Hash(password, salt)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		d.Set("apr1", apr1Hash)
 	}
-	d.SetId(fmt.Sprintf("PW%x", password))
+	return diags
+}
 
+func validateSalt(i interface{}, path cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	if s, ok := i.(string); ok {
+		if !(len(s) == 0 || len(s) == 8) {
+			diags = append(diags, diag.Errorf("must be 8 chars exactly")...)
+		}
+	} else {
+		diags = append(diags, diag.Errorf("not a string")...)
+	}
 	return diags
 }
