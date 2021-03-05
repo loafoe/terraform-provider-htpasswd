@@ -5,14 +5,17 @@ Generates hashes of provided password string
 ## Example Usage
 
 ```hcl
-data "htpasswd_password" "nginx_data" {
-  password = "SuperSecret!"
+resource "random_password" "password" {
+  length = 30
 }
-```
 
-```hcl
+data "htpasswd_password" "hash" {
+  password = random_password.password.result
+  salt     = substr(sha512(random_password.password.result), 0, 8)
+}
+
 output "apr1_hash" {
-   value = data.htpasswd_password.nginx_data.apr1
+  value = data.htpasswd_password.hash.apr1
 }
 ```
 
