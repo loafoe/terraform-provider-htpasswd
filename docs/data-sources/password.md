@@ -14,6 +14,10 @@ data "htpasswd_password" "hash" {
   salt     = substr(sha512(random_password.password.result), 0, 8)
 }
 
+output "apr1_password" {
+  value = random_password.password.result
+}
+
 output "apr1_hash" {
   value = data.htpasswd_password.hash.apr1
 }
