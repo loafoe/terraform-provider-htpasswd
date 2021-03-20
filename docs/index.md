@@ -7,7 +7,7 @@ out to local tools or binaries. This also makes it Terraform Cloud friendly.
 ## Configuring the provider
 
 ```hcl
-provider "htpassswd" {
+provider "htpasswd" {
 }
 ```
 
