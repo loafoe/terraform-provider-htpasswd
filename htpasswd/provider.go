@@ -14,7 +14,9 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"htpasswd_password": resourcePassword(),
 		},
-		DataSourcesMap:       map[string]*schema.Resource{},
+		DataSourcesMap: map[string]*schema.Resource{
+			"htpasswd_password": dataSourcePassword(),
+		},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
