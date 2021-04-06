@@ -10,16 +10,16 @@ import (
 // Provider -
 func Provider() *schema.Provider {
 	return &schema.Provider{
-		Schema:       map[string]*schema.Schema{},
-		ResourcesMap: map[string]*schema.Resource{},
-		DataSourcesMap: map[string]*schema.Resource{
-			"htpasswd_password": dataSourcePassword(),
+		Schema: map[string]*schema.Schema{},
+		ResourcesMap: map[string]*schema.Resource{
+			"htpasswd_password": resourcePassword(),
 		},
+		DataSourcesMap:       map[string]*schema.Resource{},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(_ context.Context, _ *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	ron := "swanson"
 	var diags diag.Diagnostics
 	return ron, diags
