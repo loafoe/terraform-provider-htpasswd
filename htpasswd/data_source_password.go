@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-cty/cty"
-
 	"github.com/johnaoss/htpasswd/apr1"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -14,19 +12,20 @@ import (
 
 func dataSourcePassword() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourcePasswordRead,
+		DeprecationMessage: "Please switch to the resource 'htpasswd_password'.",
+		ReadContext:        dataSourcePasswordRead,
 		Schema: map[string]*schema.Schema{
-			"password": &schema.Schema{
+			"password": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"salt": &schema.Schema{
+			"salt": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				ValidateDiagFunc: validateSalt,
 				Default:          "",
 			},
-			"apr1": &schema.Schema{
+			"apr1": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -34,7 +33,7 @@ func dataSourcePassword() *schema.Resource {
 	}
 }
 
-func dataSourcePasswordRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourcePasswordRead(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	password := d.Get("password").(string)
@@ -45,20 +44,8 @@ func dataSourcePasswordRead(ctx context.Context, d *schema.ResourceData, m inter
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		d.Set("apr1", apr1Hash)
+		_ = d.Set("apr1", apr1Hash)
 	}
 	d.SetId(fmt.Sprintf("PW%x", password))
-	return diags
-}
-
-func validateSalt(i interface{}, path cty.Path) diag.Diagnostics {
-	var diags diag.Diagnostics
-	if s, ok := i.(string); ok {
-		if !(len(s) == 0 || len(s) == 8) {
-			diags = append(diags, diag.Errorf("must be 8 chars exactly")...)
-		}
-	} else {
-		diags = append(diags, diag.Errorf("not a string")...)
-	}
 	return diags
 }

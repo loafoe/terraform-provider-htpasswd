@@ -1,7 +1,5 @@
 # htpasswd_password
 
-~> This data source is deprecated. Please switch to the resource which has additional features.
-
 Generates hashes of provided password string
 
 ## Example Usage
@@ -11,7 +9,7 @@ resource "random_password" "password" {
   length = 30
 }
 
-data "htpasswd_password" "hash" {
+resource "htpasswd_password" "hash" {
   password = random_password.password.result
   salt     = substr(sha512(random_password.password.result), 0, 8)
 }
@@ -21,7 +19,11 @@ output "apr1_password" {
 }
 
 output "apr1_hash" {
-  value = data.htpasswd_password.hash.apr1
+  value = htpasswd_password.hash.apr1
+}
+
+output "bcrypt_hash" {
+  value = htpasswd_password.hash.bcrypt
 }
 ```
 
@@ -32,3 +34,4 @@ The following attributes are exported:
 * `password` - (Required) The password string
 * `salt` - (Optional) Salt for apr1 hash generation. Must 8-charachter string or empty. Default: `""`
 * `apr1` - (Computed) The apr1 hash of the password
+* `bcrypt` - (Computed) the bcrypt hash of the password
