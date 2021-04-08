@@ -1,6 +1,6 @@
 # htpasswd_password
 
-~> This data source is deprecated. Please switch to the resource.
+~> This data source is deprecated. Please switch to the resource which has additional features.
 
 Generates hashes of provided password string
 
