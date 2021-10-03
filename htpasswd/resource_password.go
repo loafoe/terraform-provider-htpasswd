@@ -39,6 +39,10 @@ func resourcePassword() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"sha512": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
