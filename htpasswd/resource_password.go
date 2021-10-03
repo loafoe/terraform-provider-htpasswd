@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/tredoe/osutil/v2/userutil/crypt/sha512_crypt"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/johnaoss/htpasswd/apr1"
@@ -39,6 +40,10 @@ func resourcePassword() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"sha512": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -52,6 +57,7 @@ func datasourcePasswordCreate(ctx context.Context, d *schema.ResourceData, m int
 	}
 	_ = d.Set("bcrypt", string(bcryptHash))
 	d.SetId(fmt.Sprintf("PW%x", string(bcryptHash)))
+
 	return repopulateHashes(ctx, d, m)
 }
 
@@ -69,6 +75,12 @@ func repopulateHashes(_ context.Context, d *schema.ResourceData, _ interface{}) 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	c := sha512_crypt.New()
+	sha512hash, err := c.Generate([]byte(password), []byte("$6$"+salt))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	_ = d.Set("sha512", sha512hash)
 	_ = d.Set("apr1", apr1Hash)
 	_ = d.Set("bcrypt", bcryptString)
 	return diags
