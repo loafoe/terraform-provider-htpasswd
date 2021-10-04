@@ -7,15 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// Provider -
+// Provider returns a new htpasswd provider
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{},
 		ResourcesMap: map[string]*schema.Resource{
 			"htpasswd_password": resourcePassword(),
-		},
-		DataSourcesMap: map[string]*schema.Resource{
-			"htpasswd_password": dataSourcePassword(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
