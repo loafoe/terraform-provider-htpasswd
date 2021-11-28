@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## v1.0.1
+
+- Upgrade SDK to 2.9.0
+
 ## v1.0.0
 
 - Add SHA-512 support (#5)
