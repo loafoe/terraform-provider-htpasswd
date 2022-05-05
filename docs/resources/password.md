@@ -41,7 +41,8 @@ output "sha512_hash" {
 The following arguments are supported:
 
 * `password` - (Required) The password string
-* `salt` - (Optional) Salt for apr1 hash generation. Must 8-charachter string or empty. Default: `""`
+* `salt` - (Optional) Salt for apr1 hash generation.
+  Must 8-charachter string or empty. Default: `""`
 
 ## Attribute reference
 
