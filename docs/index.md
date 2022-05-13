@@ -22,9 +22,13 @@ resource "random_password" "password" {
   length = 30
 }
 
+resource "random_password" "salt" {
+  length = 8
+}
+
 resource "htpasswd_password" "hash" {
   password = random_password.password.result
-  salt     = substr(sha512(random_password.password.result), 0, 8)
+  salt     = random_password.salt.result
 }
 
 output "password" {

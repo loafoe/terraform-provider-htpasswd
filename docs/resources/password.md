@@ -9,9 +9,12 @@ resource "random_password" "password" {
   length = 30
 }
 
+resource "random_password" "salt" {
+  length = 8
+}
 resource "htpasswd_password" "hash" {
   password = random_password.password.result
-  salt     = substr(sha512(random_password.password.result), 0, 8)
+  salt     = random_password.salt.result
 }
 
 output "password" {
@@ -42,7 +45,7 @@ The following arguments are supported:
 
 * `password` - (Required) The password string
 * `salt` - (Optional) Salt for apr1 hash generation.
-  Must 8-charachter string or empty. Default: `""`
+  Must be a 8-character string or empty. Default: `""`
 
 ## Attribute reference
 
