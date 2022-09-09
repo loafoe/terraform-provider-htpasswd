@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: staticcheck
-        uses: dominikh/staticcheck-action@v1.1.0
+        uses: dominikh/staticcheck-action@v1.2.0
   golangci:
     name: golint
     runs-on: ubuntu-latest
