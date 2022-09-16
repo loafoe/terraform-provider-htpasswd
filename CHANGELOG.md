@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## v1.0.4
+
+- Upgrad SDK to 2.23.0
+
 ## v1.0.3
 
 - Upgrade SDK to 2.16.0
