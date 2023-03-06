@@ -7,5 +7,5 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.25.0
 	github.com/johnaoss/htpasswd v0.0.0-20190120213328-a0cc59f788da
 	github.com/tredoe/osutil/v2 v2.0.0-rc.16
-	golang.org/x/crypto v0.6.0
+	golang.org/x/crypto v0.7.0
 )
