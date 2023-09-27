@@ -16,14 +16,15 @@ import (
 
 func resourcePassword() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: datasourcePasswordCreate,
+		CreateContext: resourcePasswordCreate,
 		ReadContext:   repopulateHashes,
-		Delete:        schema.RemoveFromState,
+		DeleteContext: resourcePasswordDelete,
 		Schema: map[string]*schema.Schema{
 			"password": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:      schema.TypeString,
+				Required:  true,
+				Sensitive: true,
+				ForceNew:  true,
 			},
 			"salt": {
 				Type:             schema.TypeString,
@@ -48,7 +49,13 @@ func resourcePassword() *schema.Resource {
 	}
 }
 
-func datasourcePasswordCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourcePasswordDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+	d.SetId("")
+	return diags
+}
+
+func resourcePasswordCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	password := d.Get("password").(string)
 
 	bcryptHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
