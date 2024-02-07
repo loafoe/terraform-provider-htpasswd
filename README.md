@@ -10,7 +10,7 @@ This is a Terraform provider to generate output related to Apache htpasswd file
 
 # Using the provider
 
-**Terraform 0.14+**: To install this provider, copy and paste this code into your Terraform configuration. Then, run terraform init.
+**Terraform 1.0+**: To install this provider, copy and paste this code into your Terraform configuration. Then, run terraform init.
 
 ```terraform
 terraform {
@@ -24,8 +24,8 @@ terraform {
 
 ## Development requirements
 
--	[Terraform](https://www.terraform.io/downloads.html) 0.14.x
--	[Go](https://golang.org/doc/install) 1.17 or newer (to build the provider plugin)
+-	[Terraform](https://www.terraform.io/downloads.html) 1.0 or newer
+-	[Go](https://golang.org/doc/install) 1.21 or newer (to build the provider plugin)
 
 ## Issues
 
