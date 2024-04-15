@@ -2,6 +2,8 @@ package htpasswd
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -42,6 +44,10 @@ func resourcePassword() *schema.Resource {
 				Computed: true,
 			},
 			"sha512": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"sha256": { // Adding support for SHA-256
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -87,6 +93,11 @@ func repopulateHashes(_ context.Context, d *schema.ResourceData, _ interface{}) 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	h := sha256.New()
+	h.Write([]byte(salt + password))
+	sha256Hash := hex.EncodeToString(h.Sum(nil))
+	
+	_ = d.Set("sha256", sha256Hash)
 	_ = d.Set("sha512", sha512hash)
 	_ = d.Set("apr1", apr1Hash)
 	_ = d.Set("bcrypt", bcryptString)
@@ -97,10 +108,10 @@ func validateSalt(i interface{}, _ cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
 	if s, ok := i.(string); ok {
 		if !(len(s) == 0 || len(s) == 8) {
-			diags = append(diags, diag.Errorf("must be 8 chars exactly")...)
+			diags = append(diags, diag.Errorf("Salt must be 8 characters exactly")...)
 		}
 	} else {
-		diags = append(diags, diag.Errorf("not a string")...)
+		diags = append(diags, diag.Errorf("Provided salt is not a string")...)
 	}
 	return diags
 }
