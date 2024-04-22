@@ -39,6 +39,10 @@ output "bcrypt_hash" {
   value = htpasswd_password.hash.bcrypt
 }
 
+output "sha256_hash" {
+  value = htpasswd_password.hash.sha256
+}
+
 output "sha512_hash" {
   value = htpasswd_password.hash.sha512
 }
@@ -58,4 +62,5 @@ In addition to all arguments above, the following attributes are exported:
 
 * `apr1` - (Computed) The apr1 hash of the password
 * `bcrypt` - (Computed) the bcrypt hash of the password
+* `sha256` - (Computed) the SHA-256 hash of the password
 * `sha512` - (Computed) the SHA-512 hash of the password
