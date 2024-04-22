@@ -19,11 +19,15 @@ provider "htpasswd" {
 
 ```hcl
 resource "random_password" "password" {
-  length = 30
+  length           = 30
+  special          = true
+  special_override = "!@#%&*()-_=+[]{}<>:?"
 }
 
 resource "random_password" "salt" {
-  length = 8
+  length           = 8
+  special          = true
+  special_override = "!@#%&*()-_=+[]{}<>:?"
 }
 
 resource "htpasswd_password" "hash" {
