@@ -21,13 +21,13 @@ provider "htpasswd" {
 resource "random_password" "password" {
   length           = 30
   special          = true
-  special_override = "!@#%&*()-_=+[]{}<>:?"
+  override_special = "!@#%&*()-_=+[]{}<>:?"
 }
 
 resource "random_password" "salt" {
   length           = 8
   special          = true
-  special_override = "!@#%&*()-_=+[]{}<>:?"
+  override_special = "!@#%&*()-_=+[]{}<>:?"
 }
 
 resource "htpasswd_password" "hash" {
