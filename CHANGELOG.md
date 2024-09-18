@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+- Fixed a typo in docs for an argument name in the random_password resource
+
 ## v1.0.4
 
 - Upgrad SDK to 2.23.0
