@@ -108,7 +108,7 @@ func repopulateHashes(_ context.Context, d *schema.ResourceData, _ interface{}) 
 func validateSalt(i interface{}, _ cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
 	if s, ok := i.(string); ok {
-		if !(len(s) == 0 || len(s) == 8) {
+		if len(s) != 0 && len(s) != 8 {
 			diags = append(diags, diag.Errorf("Salt must be 8 characters exactly")...)
 		}
 	} else {
