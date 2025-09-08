@@ -5,7 +5,7 @@
 *.tf
 *.exe
 .DS_Store
-terraform-provider-hsdp
+terraform-provider-htpasswd
 build/
 dist/
 .idea/

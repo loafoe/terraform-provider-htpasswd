@@ -12,10 +12,10 @@ func TestAccResourcePassword_Complete(t *testing.T) {
 		Providers: testAccProviders, // Use the existing testAccProviders
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourcePasswordConfig("secret123", "saltySalt"),
+				Config: testAccResourcePasswordConfig("secret123", "saltySal"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("htpasswd_password.test", "password", "secret123"),
-					resource.TestCheckResourceAttr("htpasswd_password.test", "salt", "saltySalt"),
+					resource.TestCheckResourceAttr("htpasswd_password.test", "salt", "saltySal"),
 					resource.TestCheckResourceAttrSet("htpasswd_password.test", "sha256"),
 					resource.TestCheckResourceAttrSet("htpasswd_password.test", "sha512"),
 					resource.TestCheckResourceAttrSet("htpasswd_password.test", "apr1"),

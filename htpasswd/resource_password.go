@@ -6,8 +6,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/GehirnInc/crypt"
+	_ "github.com/GehirnInc/crypt/sha512_crypt"
 	"github.com/hashicorp/go-cty/cty"
-	"github.com/tredoe/osutil/v2/userutil/crypt/sha512_crypt"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/johnaoss/htpasswd/apr1"
@@ -88,7 +89,7 @@ func repopulateHashes(_ context.Context, d *schema.ResourceData, _ interface{}) 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	c := sha512_crypt.New()
+	c := crypt.New(crypt.SHA512)
 	sha512hash, err := c.Generate([]byte(password), []byte("$6$"+salt))
 	if err != nil {
 		return diag.FromErr(err)

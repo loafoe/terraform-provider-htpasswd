@@ -1,12 +1,12 @@
 module github.com/loafoe/terraform-provider-htpasswd
 
-go 1.21
+go 1.25
 
 require (
+	github.com/GehirnInc/crypt v0.0.0-20230320061759-8cc1b52080c5
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.33.0
 	github.com/johnaoss/htpasswd v0.0.0-20190120213328-a0cc59f788da
-	github.com/tredoe/osutil/v2 v2.0.0-rc.16
 	golang.org/x/crypto v0.22.0
 )
 
