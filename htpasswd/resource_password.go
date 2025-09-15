@@ -6,8 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/GehirnInc/crypt"
-	_ "github.com/GehirnInc/crypt/sha512_crypt"
 	"github.com/hashicorp/go-cty/cty"
 	"golang.org/x/crypto/bcrypt"
 
@@ -89,15 +87,11 @@ func repopulateHashes(_ context.Context, d *schema.ResourceData, _ interface{}) 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	c := crypt.New(crypt.SHA512)
-	sha512hash, err := c.Generate([]byte(password), []byte("$6$"+salt))
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	sha512hash := sha512Crypt(password, salt)
 	h := sha256.New()
 	h.Write([]byte(salt + password))
 	sha256Hash := hex.EncodeToString(h.Sum(nil))
-	
+
 	_ = d.Set("sha256", sha256Hash)
 	_ = d.Set("sha512", sha512hash)
 	_ = d.Set("apr1", apr1Hash)
