@@ -2,8 +2,6 @@ package htpasswd
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
@@ -96,14 +94,9 @@ func (r *PasswordEphemeral) Open(ctx context.Context, req ephemeral.OpenRequest,
 
 	sha512hash := sha512Crypt(password, salt)
 
-	h := sha256.New()
-	h.Write([]byte(salt + password))
-	sha256Hash := hex.EncodeToString(h.Sum(nil))
-
 	data.Bcrypt = types.StringValue(string(bcryptHash))
 	data.Apr1 = types.StringValue(apr1Hash)
 	data.Sha512 = types.StringValue(sha512hash)
-	data.Sha256 = types.StringValue(sha256Hash)
 
 	resp.Diagnostics.Append(resp.Result.Set(ctx, &data)...)
 }
