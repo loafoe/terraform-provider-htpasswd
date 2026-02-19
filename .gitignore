@@ -9,3 +9,4 @@ terraform-provider-htpasswd
 build/
 dist/
 .idea/
+.claude/

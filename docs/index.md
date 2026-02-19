@@ -27,7 +27,7 @@ resource "random_password" "password" {
 resource "random_password" "salt" {
   length           = 8
   special          = true
-  override_special = "!@#%&*()-_=+[]{}<>:?"
+  override_special = "./"
 }
 
 resource "htpasswd_password" "hash" {
@@ -50,6 +50,10 @@ output "apr1_hash" {
 
 output "bcrypt_hash" {
   value = htpasswd_password.hash.bcrypt
+}
+
+output "sha256_hash" {
+  value = htpasswd_password.hash.sha256
 }
 
 output "sha512_hash" {

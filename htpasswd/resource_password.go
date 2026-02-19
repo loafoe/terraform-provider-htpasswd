@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-cty/cty"
 	"golang.org/x/crypto/bcrypt"
@@ -255,14 +256,26 @@ func repopulateHashes(_ context.Context, d *schema.ResourceData, _ interface{}) 
 	return diags
 }
 
+// validSaltChars is the crypt-style base64 alphabet used for APR1/MD5-crypt salts
+const validSaltChars = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
 func validateSalt(i interface{}, _ cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
-	if s, ok := i.(string); ok {
-		if len(s) != 0 && len(s) != 8 {
-			diags = append(diags, diag.Errorf("Salt must be 8 characters exactly")...)
+	s, ok := i.(string)
+	if !ok {
+		return append(diags, diag.Errorf("Provided salt is not a string")...)
+	}
+	if len(s) == 0 {
+		return diags
+	}
+	if len(s) != 8 {
+		diags = append(diags, diag.Errorf("Salt must be exactly 8 characters, got %d", len(s))...)
+	}
+	for _, c := range s {
+		if !strings.ContainsRune(validSaltChars, c) {
+			diags = append(diags, diag.Errorf("Salt contains invalid character '%c'; valid characters are: %s", c, validSaltChars)...)
+			break
 		}
-	} else {
-		diags = append(diags, diag.Errorf("Provided salt is not a string")...)
 	}
 	return diags
 }

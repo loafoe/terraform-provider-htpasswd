@@ -8,13 +8,13 @@ Generate hashes of provided password string
 resource "random_password" "password" {
   length           = 30
   special          = true
-  special_override = "!@#%&*()-_=+[]{}<>:?"
+  override_special = "!@#%&*()-_=+[]{}<>:?"
 }
 
 resource "random_password" "salt" {
   length           = 8
   special          = true
-  special_override = "!@#%&*()-_=+[]{}<>:?"
+  override_special = "./"
 }
 
 resource "htpasswd_password" "hash" {
@@ -53,8 +53,10 @@ output "sha512_hash" {
 The following arguments are supported:
 
 * `password` - (Required) The password string
-* `salt` - (Optional) Salt for apr1 hash generation.
-  Must be a 8-character string or empty. Default: `""`
+* `salt` - (Optional) Salt for apr1 and sha512 hash generation.
+  Must be exactly 8 characters or empty. Valid characters are the crypt-style
+  base64 alphabet: `./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`
+  Default: `""`
 
 ## Attribute reference
 
