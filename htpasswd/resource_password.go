@@ -8,14 +8,210 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/go-cty/cty"
-	"golang.org/x/crypto/bcrypt"
-
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/johnaoss/htpasswd/apr1"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/crypto/bcrypt"
 )
+
+var _ resource.Resource = &PasswordResource{}
+
+type PasswordResource struct{}
+
+type PasswordModel struct {
+	ID       types.String `tfsdk:"id"`
+	Password types.String `tfsdk:"password"`
+	Salt     types.String `tfsdk:"salt"`
+	Apr1     types.String `tfsdk:"apr1"`
+	Bcrypt   types.String `tfsdk:"bcrypt"`
+	Sha256   types.String `tfsdk:"sha256"`
+	Sha512   types.String `tfsdk:"sha512"`
+}
+
+func NewPasswordResource() resource.Resource {
+	return &PasswordResource{}
+}
+
+func (r *PasswordResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_password"
+}
+
+func (r *PasswordResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Generates htpasswd compatible password hashes",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Resource identifier",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"password": schema.StringAttribute{
+				Required:    true,
+				Sensitive:   true,
+				Description: "The password to hash",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"salt": schema.StringAttribute{
+				Optional:    true,
+				Description: "Salt for apr1 and sha512 hashes. Must be exactly 8 characters from the crypt base64 alphabet.",
+				Validators: []validator.String{
+					&saltValidator{},
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"apr1": schema.StringAttribute{
+				Computed:    true,
+				Description: "APR1-MD5 hash of the password",
+			},
+			"bcrypt": schema.StringAttribute{
+				Computed:    true,
+				Description: "Bcrypt hash of the password",
+			},
+			"sha256": schema.StringAttribute{
+				Computed:    true,
+				Description: "SHA-256 hash of the password (hex encoded)",
+			},
+			"sha512": schema.StringAttribute{
+				Computed:    true,
+				Description: "SHA-512 crypt hash of the password",
+			},
+		},
+	}
+}
+
+func (r *PasswordResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data PasswordModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	password := data.Password.ValueString()
+	salt := data.Salt.ValueString()
+
+	bcryptHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		resp.Diagnostics.AddError("Bcrypt Error", fmt.Sprintf("Failed to generate bcrypt hash: %s", err))
+		return
+	}
+
+	apr1Hash, err := apr1.Hash(password, salt)
+	if err != nil {
+		resp.Diagnostics.AddError("APR1 Error", fmt.Sprintf("Failed to generate APR1 hash: %s", err))
+		return
+	}
+
+	sha512hash := sha512Crypt(password, salt)
+
+	h := sha256.New()
+	h.Write([]byte(salt + password))
+	sha256Hash := hex.EncodeToString(h.Sum(nil))
+
+	data.ID = types.StringValue(fmt.Sprintf("PW%x", string(bcryptHash)))
+	data.Bcrypt = types.StringValue(string(bcryptHash))
+	data.Apr1 = types.StringValue(apr1Hash)
+	data.Sha512 = types.StringValue(sha512hash)
+	data.Sha256 = types.StringValue(sha256Hash)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *PasswordResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data PasswordModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	password := data.Password.ValueString()
+	salt := data.Salt.ValueString()
+
+	id := data.ID.ValueString()
+	var bcryptString string
+	_, _ = fmt.Sscanf(id, "PW%x", &bcryptString)
+
+	apr1Hash, err := apr1.Hash(password, salt)
+	if err != nil {
+		resp.Diagnostics.AddError("APR1 Error", fmt.Sprintf("Failed to generate APR1 hash: %s", err))
+		return
+	}
+
+	sha512hash := sha512Crypt(password, salt)
+
+	h := sha256.New()
+	h.Write([]byte(salt + password))
+	sha256Hash := hex.EncodeToString(h.Sum(nil))
+
+	data.Bcrypt = types.StringValue(bcryptString)
+	data.Apr1 = types.StringValue(apr1Hash)
+	data.Sha512 = types.StringValue(sha512hash)
+	data.Sha256 = types.StringValue(sha256Hash)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *PasswordResource) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
+}
+
+func (r *PasswordResource) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
+}
+
+// validSaltChars is the crypt-style base64 alphabet used for APR1/MD5-crypt salts
+const validSaltChars = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+type saltValidator struct{}
+
+var _ validator.String = &saltValidator{}
+
+func (v *saltValidator) Description(_ context.Context) string {
+	return "salt must be exactly 8 characters from the crypt base64 alphabet"
+}
+
+func (v *saltValidator) MarkdownDescription(_ context.Context) string {
+	return "salt must be exactly 8 characters from the crypt base64 alphabet"
+}
+
+func (v *saltValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	s := req.ConfigValue.ValueString()
+	if len(s) == 0 {
+		return
+	}
+
+	if len(s) != 8 {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Invalid Salt Length",
+			fmt.Sprintf("Salt must be exactly 8 characters, got %d", len(s)),
+		)
+	}
+
+	for _, c := range s {
+		if !strings.ContainsRune(validSaltChars, c) {
+			resp.Diagnostics.AddAttributeError(
+				req.Path,
+				"Invalid Salt Character",
+				fmt.Sprintf("Salt contains invalid character '%c'; valid characters are: %s", c, validSaltChars),
+			)
+			break
+		}
+	}
+}
 
 // sha512Crypt implements the SHA-512 crypt algorithm as specified in
 // http://www.akkadia.org/drepper/SHA-crypt.txt
@@ -172,110 +368,3 @@ func sha512Crypt(password, salt string) string {
 	return prefix + salt + "$" + encoded
 }
 
-func resourcePassword() *schema.Resource {
-	return &schema.Resource{
-		CreateContext: resourcePasswordCreate,
-		ReadContext:   repopulateHashes,
-		DeleteContext: resourcePasswordDelete,
-		Schema: map[string]*schema.Schema{
-			"password": {
-				Type:      schema.TypeString,
-				Required:  true,
-				Sensitive: true,
-				ForceNew:  true,
-			},
-			"salt": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validateSalt,
-				Default:          "",
-			},
-			"apr1": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"bcrypt": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"sha512": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"sha256": { // Adding support for SHA-256
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-		},
-	}
-}
-
-func resourcePasswordDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
-	d.SetId("")
-	return diags
-}
-
-func resourcePasswordCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	password := d.Get("password").(string)
-
-	bcryptHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	_ = d.Set("bcrypt", string(bcryptHash))
-	d.SetId(fmt.Sprintf("PW%x", string(bcryptHash)))
-
-	return repopulateHashes(ctx, d, m)
-}
-
-func repopulateHashes(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	id := d.Id()
-	var bcryptString string
-	_, _ = fmt.Sscanf(id, "PW%x", &bcryptString)
-
-	password := d.Get("password").(string)
-
-	salt := d.Get("salt").(string)
-	apr1Hash, err := apr1.Hash(password, salt)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	sha512hash := sha512Crypt(password, salt)
-	h := sha256.New()
-	h.Write([]byte(salt + password))
-	sha256Hash := hex.EncodeToString(h.Sum(nil))
-
-	_ = d.Set("sha256", sha256Hash)
-	_ = d.Set("sha512", sha512hash)
-	_ = d.Set("apr1", apr1Hash)
-	_ = d.Set("bcrypt", bcryptString)
-	return diags
-}
-
-// validSaltChars is the crypt-style base64 alphabet used for APR1/MD5-crypt salts
-const validSaltChars = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-
-func validateSalt(i interface{}, _ cty.Path) diag.Diagnostics {
-	var diags diag.Diagnostics
-	s, ok := i.(string)
-	if !ok {
-		return append(diags, diag.Errorf("Provided salt is not a string")...)
-	}
-	if len(s) == 0 {
-		return diags
-	}
-	if len(s) != 8 {
-		diags = append(diags, diag.Errorf("Salt must be exactly 8 characters, got %d", len(s))...)
-	}
-	for _, c := range s {
-		if !strings.ContainsRune(validSaltChars, c) {
-			diags = append(diags, diag.Errorf("Salt contains invalid character '%c'; valid characters are: %s", c, validSaltChars)...)
-			break
-		}
-	}
-	return diags
-}
