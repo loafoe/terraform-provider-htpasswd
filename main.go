@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/loafoe/terraform-provider-htpasswd/htpasswd"
 )
+
+var version = "dev"
 
 func main() {
 	var debugMode bool
@@ -14,12 +17,13 @@ func main() {
 	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
-	opts := &plugin.ServeOpts{ProviderFunc: func() *schema.Provider {
-		return htpasswd.Provider()
-	}}
-	if debugMode {
-		opts.Debug = true
-		opts.ProviderAddr = "registry.terraform.io/loafoe/htpasswd"
+	opts := providerserver.ServeOpts{
+		Address: "registry.terraform.io/loafoe/htpasswd",
+		Debug:   debugMode,
 	}
-	plugin.Serve(opts)
+
+	err := providerserver.Serve(context.Background(), htpasswd.New(version), opts)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
