@@ -1,12 +1,22 @@
 # htpasswd provider
 
-The htpasswd provider has a convenience resource which helps generate output
-that is related to the Apache htpasswd password file format. As an example it
-can generate `apr1` hashed passwords for use by nginx without needing to shell
-out to local tools or binaries. This also makes it Terraform Cloud friendly.
+The htpasswd provider has resources which help generate output that is related
+to the Apache htpasswd password file format. As an example it can generate
+`apr1` hashed passwords for use by nginx without needing to shell out to local
+tools or binaries. This also makes it Terraform Cloud friendly.
 
-You can also use to create a stable `bcrypt` hash of the password across
-Terraform runs. More recent versions also support `SHA-512`
+You can also use it to create a stable `bcrypt` hash of the password across
+Terraform runs. More recent versions also support `SHA-512`.
+
+## Resources
+
+* [htpasswd_password](resources/password.md) - Managed resource that stores
+  password hashes in state.
+
+## Ephemeral Resources
+
+* [htpasswd_password](ephemeral-resources/password.md) - Ephemeral resource
+  that generates password hashes without storing in state.
 
 ## Configuring the provider
 

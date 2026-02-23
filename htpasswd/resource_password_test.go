@@ -5,12 +5,12 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccResourcePassword_Complete(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders, // Use the existing testAccProviders
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourcePasswordConfig("1", "secret123", "saltySal"),
@@ -72,7 +72,7 @@ func TestAccResourcePassword_SHA512Regression(t *testing.T) {
 	expectedSHA512 := "$6$12341234$b4koNtwY05CUmMhYkmcf9mU6K4QkuHVuVDcQWPpZoLf0dFXUggoBUV1O3MFBnAfApbrDrETCEhDdqyzSBHGvm1"
 
 	resource.Test(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourcePasswordConfig("regression", "1234567890abcdefghijklmnopqrstuvwxyz", "12341234"),
