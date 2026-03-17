@@ -64,5 +64,6 @@ In addition to all arguments above, the following attributes are exported:
 
 * `apr1` - (Computed) The apr1 hash of the password
 * `bcrypt` - (Computed) the bcrypt hash of the password
+* `sha1` - (Computed) the SHA-1 hash of the password. This algorithm is **insecure** by today's standards.
 * `sha256` - (Computed) the SHA-256 hash of the password
 * `sha512` - (Computed) the SHA-512 hash of the password

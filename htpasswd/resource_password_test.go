@@ -17,6 +17,7 @@ func TestAccResourcePassword_Complete(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("htpasswd_password.test_1", "password", "secret123"),
 					resource.TestCheckResourceAttr("htpasswd_password.test_1", "salt", "saltySal"),
+					resource.TestCheckResourceAttrSet("htpasswd_password.test_1", "sha1"),
 					resource.TestCheckResourceAttrSet("htpasswd_password.test_1", "sha256"),
 					resource.TestCheckResourceAttrSet("htpasswd_password.test_1", "sha512"),
 					resource.TestCheckResourceAttrSet("htpasswd_password.test_1", "apr1"),
@@ -24,6 +25,9 @@ func TestAccResourcePassword_Complete(t *testing.T) {
 					// Check apr1 format: should start with $apr1$saltySal$
 					resource.TestMatchResourceAttr("htpasswd_password.test_1", "apr1",
 						regexp.MustCompile(`^\$apr1\$saltySal\$.+`)),
+					// Check sha1 format: should start with {SHA}
+					resource.TestMatchResourceAttr("htpasswd_password.test_1", "sha1",
+						regexp.MustCompile(`^{SHA}.+`)),
 					// Check sha512 format: should start with $6$saltySal$
 					resource.TestMatchResourceAttr("htpasswd_password.test_1", "sha512",
 						regexp.MustCompile(`^\$6\$saltySal\$.+`)),
@@ -37,6 +41,7 @@ func TestAccResourcePassword_Complete(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("htpasswd_password.test_2", "password", "1234567890abcdefghijklmnopqrstuvwxyz"),
 					resource.TestCheckResourceAttr("htpasswd_password.test_2", "salt", "12341234"),
+					resource.TestCheckResourceAttrSet("htpasswd_password.test_2", "sha1"),
 					resource.TestCheckResourceAttrSet("htpasswd_password.test_2", "sha256"),
 					resource.TestCheckResourceAttrSet("htpasswd_password.test_2", "sha512"),
 					resource.TestCheckResourceAttrSet("htpasswd_password.test_2", "apr1"),
@@ -44,6 +49,9 @@ func TestAccResourcePassword_Complete(t *testing.T) {
 					// Check apr1 format: should start with $apr1$12341234$
 					resource.TestMatchResourceAttr("htpasswd_password.test_2", "apr1",
 						regexp.MustCompile(`^\$apr1\$12341234\$.+`)),
+					// Check sha1 format: should start with {SHA}
+					resource.TestMatchResourceAttr("htpasswd_password.test_2", "sha1",
+						regexp.MustCompile(`^{SHA}.+`)),
 					// Check sha512 format: should start with $6$12341234$
 					resource.TestMatchResourceAttr("htpasswd_password.test_2", "sha512",
 						regexp.MustCompile(`^\$6\$12341234\$.+`)),

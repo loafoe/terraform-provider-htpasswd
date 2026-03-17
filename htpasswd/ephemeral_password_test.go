@@ -58,8 +58,9 @@ ephemeral "htpasswd_password" "%s" {
 locals {
   apr1_hash   = ephemeral.htpasswd_password.%s.apr1
   bcrypt_hash = ephemeral.htpasswd_password.%s.bcrypt
+  sha1_hash   = ephemeral.htpasswd_password.%s.sha1
   sha256_hash = ephemeral.htpasswd_password.%s.sha256
   sha512_hash = ephemeral.htpasswd_password.%s.sha512
 }
-`, name, password, salt, name, name, name, name)
+`, name, password, salt, name, name, name, name, name)
 }

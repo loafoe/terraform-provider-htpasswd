@@ -2,9 +2,11 @@ package htpasswd
 
 import (
 	"context"
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -28,6 +30,7 @@ type PasswordModel struct {
 	Salt     types.String `tfsdk:"salt"`
 	Apr1     types.String `tfsdk:"apr1"`
 	Bcrypt   types.String `tfsdk:"bcrypt"`
+	Sha1     types.String `tfsdk:"sha1"`
 	Sha256   types.String `tfsdk:"sha256"`
 	Sha512   types.String `tfsdk:"sha512"`
 }
@@ -77,6 +80,10 @@ func (r *PasswordResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "Bcrypt hash of the password",
 			},
+			"sha1": schema.StringAttribute{
+				Computed:    true,
+				Description: "SHA1 crypt hash of the password (insecure)",
+			},
 			"sha256": schema.StringAttribute{
 				Computed:    true,
 				Description: "SHA-256 hash of the password (hex encoded)",
@@ -113,16 +120,15 @@ func (r *PasswordResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	sha512hash := sha512Crypt(password, salt)
-
-	h := sha256.New()
-	h.Write([]byte(salt + password))
-	sha256Hash := hex.EncodeToString(h.Sum(nil))
+	sha256Hash := sha256Crypt(password, salt)
+	sha1Hash := sha1Crypt(password)
 
 	data.ID = types.StringValue(fmt.Sprintf("PW%x", string(bcryptHash)))
 	data.Bcrypt = types.StringValue(string(bcryptHash))
 	data.Apr1 = types.StringValue(apr1Hash)
-	data.Sha512 = types.StringValue(sha512hash)
+	data.Sha1 = types.StringValue(sha1Hash)
 	data.Sha256 = types.StringValue(sha256Hash)
+	data.Sha512 = types.StringValue(sha512hash)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -211,6 +217,23 @@ func (v *saltValidator) ValidateString(_ context.Context, req validator.StringRe
 			break
 		}
 	}
+}
+
+// The SHA-1 algorithm doesn't use any salt and is considered insecure.
+func sha1Crypt(password string) string {
+	const prefix = "{SHA}"
+
+	h := sha1.New()
+	h.Write([]byte(password))
+	hash := base64.StdEncoding.EncodeToString(h.Sum(nil))
+	return prefix + hash
+}
+
+func sha256Crypt(password, salt string) string {
+	h := sha256.New()
+	h.Write([]byte(salt + password))
+	hash := hex.EncodeToString(h.Sum(nil))
+	return hash
 }
 
 // sha512Crypt implements the SHA-512 crypt algorithm as specified in
@@ -367,4 +390,3 @@ func sha512Crypt(password, salt string) string {
 
 	return prefix + salt + "$" + encoded
 }
-
