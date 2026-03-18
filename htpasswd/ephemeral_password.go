@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/johnaoss/htpasswd/apr1"
 	"golang.org/x/crypto/bcrypt"
@@ -17,13 +16,14 @@ var _ ephemeral.EphemeralResource = &PasswordEphemeral{}
 type PasswordEphemeral struct{}
 
 type PasswordEphemeralModel struct {
-	Password types.String `tfsdk:"password"`
-	Salt     types.String `tfsdk:"salt"`
-	Apr1     types.String `tfsdk:"apr1"`
-	Bcrypt   types.String `tfsdk:"bcrypt"`
-	Sha1     types.String `tfsdk:"sha1"`
-	Sha256   types.String `tfsdk:"sha256"`
-	Sha512   types.String `tfsdk:"sha512"`
+	Password   types.String `tfsdk:"password"`
+	Salt       types.String `tfsdk:"salt"`
+	LegacyHash types.Bool   `tfsdk:"legacy_hash"`
+	Apr1       types.String `tfsdk:"apr1"`
+	Bcrypt     types.String `tfsdk:"bcrypt"`
+	Sha1       types.String `tfsdk:"sha1"`
+	Sha256     types.String `tfsdk:"sha256"`
+	Sha512     types.String `tfsdk:"sha512"`
 }
 
 func NewPasswordEphemeral() ephemeral.EphemeralResource {
@@ -45,10 +45,11 @@ func (r *PasswordEphemeral) Schema(_ context.Context, _ ephemeral.SchemaRequest,
 			},
 			"salt": schema.StringAttribute{
 				Optional:    true,
-				Description: "Salt for apr1 and sha512 hashes. Must be exactly 8 characters from the crypt base64 alphabet.",
-				Validators: []validator.String{
-					&saltValidator{},
-				},
+				Description: "Salt for apr1 and sha512 hashes. Must be exactly 8 characters from the crypt base64 alphabet (unless legacy_hash is true).",
+			},
+			"legacy_hash": schema.BoolAttribute{
+				Optional:    true,
+				Description: "When true, uses pre-1.6.0 salt handling which allows flexible salt lengths (1-16 characters). Use this to maintain compatibility with existing password hashes.",
 			},
 			"apr1": schema.StringAttribute{
 				Computed:    true,
@@ -84,6 +85,13 @@ func (r *PasswordEphemeral) Open(ctx context.Context, req ephemeral.OpenRequest,
 
 	password := data.Password.ValueString()
 	salt := data.Salt.ValueString()
+	legacyHash := data.LegacyHash.ValueBool()
+
+	// Validate salt based on legacy_hash setting
+	if err := validateSalt(salt, legacyHash); err != nil {
+		resp.Diagnostics.AddError("Invalid Salt", err.Error())
+		return
+	}
 
 	bcryptHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

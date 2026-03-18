@@ -54,9 +54,14 @@ The following arguments are supported:
 
 * `password` - (Required) The password string
 * `salt` - (Optional) Salt for apr1 and sha512 hash generation.
-  Must be exactly 8 characters or empty. Valid characters are the crypt-style
-  base64 alphabet: `./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`
+  Must be exactly 8 characters or empty (unless `legacy_hash` is true).
+  Valid characters are the crypt-style base64 alphabet:
+  `./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`
   Default: `""`
+* `legacy_hash` - (Optional) When true, uses pre-1.6.0 salt handling which
+  allows flexible salt lengths (1-16 characters). Use this to maintain
+  compatibility with existing password hashes created before version 1.6.0.
+  Default: `false`
 
 ## Attribute reference
 

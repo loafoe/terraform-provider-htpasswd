@@ -4,10 +4,20 @@
 
 ## ⚠️ Breaking Change in 1.6.0+
 
-Version 1.6.0 introduces a change in the salt generation algorithm. This means
-that **generated password hashes may differ** from those created by earlier
-versions, even with the same input. If you upgrade and run `terraform plan`,
-you may see resources marked for replacement. Review carefully before applying.
+Version 1.6.0 introduces a change in the salt validation which now requires
+exactly 8 characters. This means that **generated password hashes may differ**
+from those created by earlier versions if you were using a different salt length.
+
+If you upgrade and run `terraform plan`, you may see resources marked for
+replacement. To maintain compatibility with existing hashes, set `legacy_hash = true`:
+
+```terraform
+resource "htpasswd_password" "example" {
+  password    = "secret"
+  salt        = "mysalt"  # Can be 1-16 characters in legacy mode
+  legacy_hash = true
+}
+```
 
 ## Overview
 

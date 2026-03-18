@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/johnaoss/htpasswd/apr1"
 	"golang.org/x/crypto/bcrypt"
@@ -25,14 +24,15 @@ var _ resource.Resource = &PasswordResource{}
 type PasswordResource struct{}
 
 type PasswordModel struct {
-	ID       types.String `tfsdk:"id"`
-	Password types.String `tfsdk:"password"`
-	Salt     types.String `tfsdk:"salt"`
-	Apr1     types.String `tfsdk:"apr1"`
-	Bcrypt   types.String `tfsdk:"bcrypt"`
-	Sha1     types.String `tfsdk:"sha1"`
-	Sha256   types.String `tfsdk:"sha256"`
-	Sha512   types.String `tfsdk:"sha512"`
+	ID         types.String `tfsdk:"id"`
+	Password   types.String `tfsdk:"password"`
+	Salt       types.String `tfsdk:"salt"`
+	LegacyHash types.Bool   `tfsdk:"legacy_hash"`
+	Apr1       types.String `tfsdk:"apr1"`
+	Bcrypt     types.String `tfsdk:"bcrypt"`
+	Sha1       types.String `tfsdk:"sha1"`
+	Sha256     types.String `tfsdk:"sha256"`
+	Sha512     types.String `tfsdk:"sha512"`
 }
 
 func NewPasswordResource() resource.Resource {
@@ -64,13 +64,14 @@ func (r *PasswordResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"salt": schema.StringAttribute{
 				Optional:    true,
-				Description: "Salt for apr1 and sha512 hashes. Must be exactly 8 characters from the crypt base64 alphabet.",
-				Validators: []validator.String{
-					&saltValidator{},
-				},
+				Description: "Salt for apr1 and sha512 hashes. Must be exactly 8 characters from the crypt base64 alphabet (unless legacy_hash is true).",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+			},
+			"legacy_hash": schema.BoolAttribute{
+				Optional:    true,
+				Description: "When true, uses pre-1.6.0 salt handling which allows flexible salt lengths (1-16 characters). Use this to maintain compatibility with existing password hashes.",
 			},
 			"apr1": schema.StringAttribute{
 				Computed:    true,
@@ -106,6 +107,13 @@ func (r *PasswordResource) Create(ctx context.Context, req resource.CreateReques
 
 	password := data.Password.ValueString()
 	salt := data.Salt.ValueString()
+	legacyHash := data.LegacyHash.ValueBool()
+
+	// Validate salt based on legacy_hash setting
+	if err := validateSalt(salt, legacyHash); err != nil {
+		resp.Diagnostics.AddError("Invalid Salt", err.Error())
+		return
+	}
 
 	bcryptHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -177,46 +185,34 @@ func (r *PasswordResource) Delete(_ context.Context, _ resource.DeleteRequest, _
 // validSaltChars is the crypt-style base64 alphabet used for APR1/MD5-crypt salts
 const validSaltChars = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
-type saltValidator struct{}
-
-var _ validator.String = &saltValidator{}
-
-func (v *saltValidator) Description(_ context.Context) string {
-	return "salt must be exactly 8 characters from the crypt base64 alphabet"
-}
-
-func (v *saltValidator) MarkdownDescription(_ context.Context) string {
-	return "salt must be exactly 8 characters from the crypt base64 alphabet"
-}
-
-func (v *saltValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
-	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
-		return
+// validateSalt validates the salt based on the legacy_hash setting.
+// When legacyHash is true, allows flexible salt lengths (1-16 characters).
+// When legacyHash is false, requires exactly 8 characters.
+func validateSalt(salt string, legacyHash bool) error {
+	if salt == "" {
+		return nil
 	}
 
-	s := req.ConfigValue.ValueString()
-	if len(s) == 0 {
-		return
-	}
-
-	if len(s) != 8 {
-		resp.Diagnostics.AddAttributeError(
-			req.Path,
-			"Invalid Salt Length",
-			fmt.Sprintf("Salt must be exactly 8 characters, got %d", len(s)),
-		)
-	}
-
-	for _, c := range s {
+	// Validate characters regardless of legacy mode
+	for _, c := range salt {
 		if !strings.ContainsRune(validSaltChars, c) {
-			resp.Diagnostics.AddAttributeError(
-				req.Path,
-				"Invalid Salt Character",
-				fmt.Sprintf("Salt contains invalid character '%c'; valid characters are: %s", c, validSaltChars),
-			)
-			break
+			return fmt.Errorf("salt contains invalid character '%c'; valid characters are: %s", c, validSaltChars)
 		}
 	}
+
+	if legacyHash {
+		// Legacy mode: allow 1-16 characters (pre-1.6.0 behavior)
+		if len(salt) > 16 {
+			return fmt.Errorf("salt must be at most 16 characters, got %d", len(salt))
+		}
+	} else {
+		// Modern mode: require exactly 8 characters
+		if len(salt) != 8 {
+			return fmt.Errorf("salt must be exactly 8 characters, got %d (set legacy_hash = true for flexible salt lengths)", len(salt))
+		}
+	}
+
+	return nil
 }
 
 // The SHA-1 algorithm doesn't use any salt and is considered insecure.
