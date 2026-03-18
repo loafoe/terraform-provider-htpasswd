@@ -62,6 +62,11 @@ output "bcrypt_hash" {
   value = htpasswd_password.hash.bcrypt
 }
 
+output "sha1_hash" {
+  # This algorithm is insecure by today's standards.
+  value = htpasswd_password.hash.sha1
+}
+
 output "sha256_hash" {
   value = htpasswd_password.hash.sha256
 }

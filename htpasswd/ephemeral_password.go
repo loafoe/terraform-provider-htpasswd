@@ -21,6 +21,7 @@ type PasswordEphemeralModel struct {
 	Salt     types.String `tfsdk:"salt"`
 	Apr1     types.String `tfsdk:"apr1"`
 	Bcrypt   types.String `tfsdk:"bcrypt"`
+	Sha1     types.String `tfsdk:"sha1"`
 	Sha256   types.String `tfsdk:"sha256"`
 	Sha512   types.String `tfsdk:"sha512"`
 }
@@ -57,6 +58,10 @@ func (r *PasswordEphemeral) Schema(_ context.Context, _ ephemeral.SchemaRequest,
 				Computed:    true,
 				Description: "Bcrypt hash of the password",
 			},
+			"sha1": schema.StringAttribute{
+				Computed:    true,
+				Description: "SHA1 crypt hash of the password (insecure)",
+			},
 			"sha256": schema.StringAttribute{
 				Computed:    true,
 				Description: "SHA-256 hash of the password (hex encoded)",
@@ -92,10 +97,12 @@ func (r *PasswordEphemeral) Open(ctx context.Context, req ephemeral.OpenRequest,
 		return
 	}
 
+	sha1hash := sha1Crypt(password)
 	sha512hash := sha512Crypt(password, salt)
 
 	data.Bcrypt = types.StringValue(string(bcryptHash))
 	data.Apr1 = types.StringValue(apr1Hash)
+	data.Sha1 = types.StringValue(sha1hash)
 	data.Sha512 = types.StringValue(sha512hash)
 
 	resp.Diagnostics.Append(resp.Result.Set(ctx, &data)...)
