@@ -1,6 +1,6 @@
 module github.com/loafoe/terraform-provider-htpasswd
 
-go 1.26.0
+go 1.27.3
 
 require (
 	github.com/hashicorp/go-version v1.9.0

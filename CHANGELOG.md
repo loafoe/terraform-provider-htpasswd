@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## v2.2.0
 
-- Require Go 1.26 to build the provider
+- Require Go 1.27.3 to build the provider
 - Bump `golang.org/x/crypto` to 0.56.0
 - Bump `terraform-plugin-testing` to 1.16.0
 - Bump GitHub Actions: `actions/checkout` v7, `actions/setup-go` v7,
