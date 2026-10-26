@@ -17,8 +17,7 @@ func TestAccEphemeralPassword_Basic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config:             testAccEphemeralPasswordBasicConfig("test1", "secret123", "saltySal"),
-				ExpectNonEmptyPlan: true,
+				Config: testAccEphemeralPasswordBasicConfig("test1", "secret123", "saltySal"),
 			},
 		},
 	})
@@ -32,8 +31,7 @@ func TestAccEphemeralPassword_WithLocalVariable(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config:             testAccEphemeralPasswordWithLocalConfig("test2", "1234567890abcdefghijklmnopqrstuvwxyz", "12341234"),
-				ExpectNonEmptyPlan: true,
+				Config: testAccEphemeralPasswordWithLocalConfig("test2", "1234567890abcdefghijklmnopqrstuvwxyz", "12341234"),
 			},
 		},
 	})
