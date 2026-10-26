@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## v2.2.0
+
+- Require Go 1.26 to build the provider
+- Bump `golang.org/x/crypto` to 0.56.0
+- Bump `terraform-plugin-testing` to 1.16.0
+- Bump GitHub Actions: `actions/checkout` v7, `actions/setup-go` v7,
+  `github/codeql-action` 4.37.4 and `DavidAnson/markdownlint-cli2-action` 24.1.0
 - Fixed a typo in docs for an argument name in the random_password resource
 
 ## v1.0.4
