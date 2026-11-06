@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+- Fix updates to `legacy_hash` on existing password resources, preserving their
+  identity and hashes when upgrading from older provider versions ([#125](https://github.com/loafoe/terraform-provider-htpasswd/issues/125)).
+  Keep existing hashes known during planning when password and salt are unchanged,
+  avoiding unnecessary downstream secret changes.
+
 ## v2.2.0
 
 - Require Go 1.27.3 to build the provider

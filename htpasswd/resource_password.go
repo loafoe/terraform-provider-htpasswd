@@ -5,11 +5,12 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
-	"encoding/hex"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -20,6 +21,7 @@ import (
 )
 
 var _ resource.Resource = &PasswordResource{}
+var _ resource.ResourceWithModifyPlan = &PasswordResource{}
 
 type PasswordResource struct{}
 
@@ -95,6 +97,31 @@ func (r *PasswordResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 		},
 	}
+}
+
+func (r *PasswordResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() || len(resp.RequiresReplace) > 0 {
+		return
+	}
+
+	var state, plan PasswordModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if plan.Password.IsUnknown() || plan.Salt.IsUnknown() ||
+		!plan.Password.Equal(state.Password) || !plan.Salt.Equal(state.Salt) {
+		return
+	}
+
+	// Changing only legacy_hash does not change existing hashes or downstream secrets.
+	plan.Apr1 = state.Apr1
+	plan.Bcrypt = state.Bcrypt
+	plan.Sha256 = state.Sha256
+	plan.Sha512 = state.Sha512
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
 }
 
 func (r *PasswordResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -176,7 +203,18 @@ func (r *PasswordResource) Read(ctx context.Context, req resource.ReadRequest, r
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *PasswordResource) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
+func (r *PasswordResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data PasswordModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("legacy_hash"), &data.LegacyHash)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Password and salt changes require replacement; preserve existing hashes on updates.
+	data.Sha1 = types.StringValue(sha1Crypt(data.Password.ValueString()))
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *PasswordResource) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
